@@ -1,9 +1,9 @@
 /**
  * EdgeGuard - 威胁情报边缘函数
- * 实时分析和拦截恶意请求
+ * 路径: /api/threat/analyze
  */
 
-// 威胁规则库（边缘侧维护）
+// 威胁规则库
 const THREAT_RULES = {
   SQL_INJECTION: [
     /(\%27)|(\')|(\-\-)|(\%23)|(#)/i,
@@ -32,7 +32,7 @@ const THREAT_RULES = {
   ],
 }
 
-// 恶意 IP 黑名单（边缘缓存）
+// 恶意 IP 黑名单
 const BLACKLISTED_IPS = new Set([
   '192.168.1.100',
   '10.0.0.50',
@@ -40,20 +40,20 @@ const BLACKLISTED_IPS = new Set([
 
 // 请求频率限制
 const rateLimitMap = new Map()
-const RATE_LIMIT = 100 // 每分钟最大请求数
+const RATE_LIMIT = 100
 
-export async function onRequest(context) {
-  const { request } = context
+export default async function handler(request) {
   const startTime = Date.now()
 
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  }
-
+  // CORS 处理
   if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
+    });
   }
 
   // 获取请求信息
@@ -164,8 +164,8 @@ export async function onRequest(context) {
     }), {
       status: 403,
       headers: {
-        ...corsHeaders,
         'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
         'X-Threat-Detected': 'true',
         'X-Edge-Security': 'blocked',
       },
@@ -174,8 +174,8 @@ export async function onRequest(context) {
 
   return new Response(JSON.stringify(response), {
     headers: {
-      ...corsHeaders,
       'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
       'X-Edge-Security': 'passed',
       'X-Processing-Time': `${response.processingTime}ms`,
     },
